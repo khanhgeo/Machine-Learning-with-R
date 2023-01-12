@@ -5,9 +5,14 @@ date: "2023-01-12"
 output: html_document
 ---
 
+### Setup and Get Data
+
 ```{r setup, include=FALSE}
+# import libraries
+library(ggplot2)
+library(dplyr)
 # Set global themes for plots
-library(ggplot2); theme_set(theme_bw())
+theme_set(theme_bw())
 ```
 
 This project use the [Bike Sharing Demand Dataset](https://www.kaggle.com/c/bike-sharing-demand/data) on Kaggle. The main goal of this project is to learn Exploratory Data Analysis and begin to get an understanding that sometimes certain models are not a good choice for a data set. In this case, we will discover that Linear Regression may not be the best choice given our data!
@@ -19,6 +24,8 @@ bike <- read.csv("../Training Exercises/Machine Learning Projects/CSV files for 
 # display top 6 rows
 head(bike)
 ```
+
+### Exploratory Data Analysis
 
 ```{r}
 # plot scatter plot temp vs count
@@ -39,9 +46,41 @@ ggplot(bike, aes(datetime, count)) +
   geom_point(aes(color=temp)) +
   scale_color_continuous(low="#55D8CE", high="#FF6E2E")
 ```
+
+```{r}
+# the correlation between temp and count
+cor(bike[,c('temp','count')])
+```
+```{r}
+# Let's explore the season data
+ggplot(bike, aes(factor(season), count)) +
+  geom_boxplot(aes(color=factor(season)))
+```
 ```{r}
 # extract hour column
 bike$hour <- sapply(bike$datetime, function(x){format(x, "%H")}) 
 head(bike)
+```
+```{r}
+ggplot(filter(bike,workingday==1),aes(hour,count)) +
+  geom_point(position=position_jitter(w=1, h=0),aes(color=temp),alpha=0.5) +
+  scale_color_gradientn(colours = c('dark blue','blue','light blue','light green','yellow','orange','red'))
+```
+```{r}
+ggplot(filter(bike,workingday==0),aes(hour,count)) +
+  geom_point(position=position_jitter(w=1, h=0),aes(color=temp),alpha=0.8) +
+  scale_color_gradientn(colours = c('dark blue','blue','light blue','light green','yellow','orange','red'))
+```
+
+### Building the Model
+
+```{r}
+# Use lm() to build a model that predicts count based solely on the temp feature
+model <- lm(count~temp,bike)
+```
+
+```{r}
+# Get the summary of the model
+summary(model)
 ```
 
