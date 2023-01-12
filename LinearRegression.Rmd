@@ -1,0 +1,47 @@
+---
+title: "Linear Regression"
+author: "KhanhTV5"
+date: "2023-01-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Set global themes for plots
+library(ggplot2); theme_set(theme_bw())
+```
+
+This project use the [Bike Sharing Demand Dataset](https://www.kaggle.com/c/bike-sharing-demand/data) on Kaggle. The main goal of this project is to learn Exploratory Data Analysis and begin to get an understanding that sometimes certain models are not a good choice for a data set. In this case, we will discover that Linear Regression may not be the best choice given our data!
+
+```{r}
+# load bikeshare dataset
+bike <- read.csv("../Training Exercises/Machine Learning Projects/CSV files for ML Projects/bikeshare.csv")
+
+# display top 6 rows
+head(bike)
+```
+
+```{r}
+# plot scatter plot temp vs count
+ggplot(bike, aes(x=temp, y=count)) +
+  geom_point(aes(color=temp), alpha=0.3) +
+  theme_classic()
+```
+
+
+```{r}
+# convert char datetime to POSIXct datetime
+bike$datetime <- as.POSIXct(bike$datetime)
+head(bike)
+```
+```{r}
+# plot count by datetime
+ggplot(bike, aes(datetime, count)) +
+  geom_point(aes(color=temp)) +
+  scale_color_continuous(low="#55D8CE", high="#FF6E2E")
+```
+```{r}
+# extract hour column
+bike$hour <- sapply(bike$datetime, function(x){format(x, "%H")}) 
+head(bike)
+```
+
