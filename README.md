@@ -1,0 +1,1 @@
+This repository contains the machine learning projects that have been impelemented with R.
