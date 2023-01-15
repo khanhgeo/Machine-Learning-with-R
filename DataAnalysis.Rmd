@@ -1,0 +1,208 @@
+---
+title: "Data Analysis"
+author: "KhanhTV5"
+date: "2023-01-15"
+output: 
+  html_document: 
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# import libraries
+library(tidyverse)
+library(gapminder)
+```
+
+### 1. Exploring Data
+
+```{r}
+df <- starwars
+# typical functions use to explore data
+view(df)
+dim(df)
+#str(df)
+glimpse(df)
+names(df)
+head(df)
+tail(df)
+sample_n(df,5)
+length(df)
+class(df$hair_color)
+unique(df$eye_color)
+barplot(sort(table(df$eye_color), decreasing = T))
+view(sort(table(df$eye_color), decreasing = T))
+view(df[is.na(df$hair_color),])
+summary(df$height)
+```
+
+
+### 2. Data Cleansing
+
+```{r}
+# change variable type to factor
+df$gender <- as.factor(df$gender)
+class(df$gender)
+
+# change factor levels
+df$gender <- factor((df$gender), levels = c("masculine","feminine"))
+levels(df$gender)
+
+# select variables
+df %>% 
+  select(name, height, ends_with("color")) %>% 
+  names()
+
+# filter observations
+unique(df$hair_color)
+
+df %>% 
+  select(name, height, ends_with("color")) %>% 
+  filter(hair_color %in% c("blond", "brown") &
+           height < 180)
+
+# missing data
+mean(df$height, na.rm = T)
+
+# remove all missing data
+df %>% 
+  select(name, gender, hair_color, height) %>% 
+  na.omit()
+
+df %>% 
+  select(name, gender, hair_color, height) %>% 
+  filter(!complete.cases(.))
+
+df %>% 
+  select(name, gender, hair_color, height) %>% 
+  filter(!complete.cases(.)) %>% 
+  drop_na(height)
+
+df %>% 
+  select(name, gender, hair_color, height) %>% 
+  filter(!complete.cases(.)) %>% 
+  mutate(hair_color = replace_na(hair_color,"none"))
+```
+
+```{r}
+# duplicate
+Names <- c("Peter", "Andrew", "John", "Peter")
+Ages <- c(22, 33, 44, 22)
+
+df <- data.frame(Names, Ages)
+
+df[!duplicated(df),]
+
+df %>% distinct()
+```
+
+```{r}
+# re-coding variables
+starwars %>% 
+  select(name, gender) %>% 
+  mutate(gender = recode(gender, "masculine" = 1, "feminine" = 2))
+```
+
+### 3. Data Manipulation
+
+```{r}
+df <- msleep
+
+# rename a variable
+rename(df, "conserv" = "conservation")
+
+# reorder variables
+select(df, vore, name, everything())
+
+# change a variable type
+df$vore <- as.factor(df$vore)
+
+mutate(df, vore = as.character(df$vore))
+
+# select variables to work with
+names(df)
+select(df, 2:4, awake, starts_with("sleep"), contains("wt"))
+
+```
+
+```{r}
+# filter and arrange data
+df %>% 
+  filter((order == "Carnivora" | order == "Primates") & sleep_total > 8) %>% 
+  select(name, order, sleep_total) %>% 
+  arrange(-sleep_total) %>% 
+  view()
+
+df %>% 
+  filter(order %in% c("Carnivora", "Primates") & sleep_total > 8) %>% 
+  select(name, order, sleep_total) %>% 
+  arrange(order) %>% 
+  view()
+```
+
+```{r}
+# change observations (mutate)
+df %>% 
+  mutate(brainwt_in_grams = brainwt*1000) %>% 
+  view()
+```
+
+```{r}
+# conditional change (if-else). logical vector change based on a condition
+size_of_brain <- df %>% 
+  select(name, brainwt) %>% 
+  drop_na(brainwt) %>% 
+  mutate(brain_size = if_else(brainwt > 0.01, "large", "small"))
+
+
+# re-code data and rename a variable
+size_of_brain %>% 
+  mutate(brain_size = recode(brain_size, "large" = 1, "small" = 2))
+```
+
+
+```{r}
+# conditional change
+starwars %>% 
+  mutate(height_m = height/100) %>% 
+  select(name, height, height_m) %>% 
+  mutate(tallness = 
+           if_else(height_m < 1,
+                   "short",
+                   "tall"))
+```
+
+```{r}
+# reshape data rows to cols (pivot by pivot_wider or spread functions)
+# view(gapminder)
+data <- select(gapminder, country, year, lifeExp)
+view(data)
+
+# using pivot_wider()
+data %>% 
+  pivot_wider(names_from = year, values_from = lifeExp)
+
+# using spread()
+data %>% spread(year, lifeExp)
+```
+
+
+```{r}
+# reshape data cols to rows
+row2col <- spread(data, year, lifeExp)
+# using pivot_longer()
+pivot_longer(row2col, names_to = "year", values_to = "lifeExp", -country)
+# using gather()
+col2row <- gather(row2col, year, lifeExp, -country)
+```
+
+### 4. Describing and Summarising Data
+
+```{r}
+
+```
+
+
