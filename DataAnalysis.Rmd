@@ -202,7 +202,13 @@ col2row <- gather(row2col, year, lifeExp, -country)
 ### 4. Describing and Summarising Data
 
 ```{r}
+# range / spread
 
 ```
 
+```{r}
+# centrality
+```
 
+
+### 5. Analyzing
