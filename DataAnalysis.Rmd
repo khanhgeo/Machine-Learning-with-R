@@ -212,3 +212,12 @@ col2row <- gather(row2col, year, lifeExp, -country)
 
 
 ### 5. Analyzing
+
+```{r}
+gapminder %>% 
+  filter(continent %in% c("Americas","Europe","Asia")) %>% 
+  ggplot(aes(x = lifeExp, color = continent))+
+  geom_boxplot() + facet_grid(continent ~ .) #+
+  #geom_density() + facet_grid(continent ~ .)
+```
+
