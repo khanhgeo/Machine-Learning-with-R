@@ -1,0 +1,118 @@
+---
+title: "STAT5320-Assignment2"
+author: "KhanhTV5"
+date: "2023-03-02"
+output:
+  pdf_document:
+    latex_engine: lualatex
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+```
+
+```{r}
+library(MASS)
+library(glmnet)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+set.seed(5320)
+
+# Set up simulation parameters
+n <- seq(from = 15, to = 1515, by = 100)
+n_useful <- 5
+n_unrelated <- 5
+beta <- c(0.5, 1, 1.5, 2, 3, rep(0, n_unrelated))
+sigma <- c(0.1, 1, 2)
+
+# Simulate data and fit models
+results <- expand.grid(n = n, sigma = sigma, method = c("lasso", "stepwise"))
+nrow_results <- nrow(results)
+
+for (i in seq_len(nrow_results)) {
+  # Simulate data
+  X <- matrix(rnorm(results$n[i] * 10), ncol = 10)
+  y <- X %*% beta + rnorm(results$n[i], sd = results$sigma[i])
+  colnames(X) <- paste0("X", 1:10)
+  data <- data.frame(y, X)
+  train_idx <- sample(nrow(data), floor(nrow(data)*0.8))
+  train <- data[train_idx, ]
+  test <- data[-train_idx, ]
+  
+  # Fit models & evaluate performance
+  if (results$method[i] == "lasso") {
+    cv_lasso_fit <- cv.glmnet(as.matrix(train[, -1]), train$y, alpha = 1)
+    # Select optimal lambda value based on cross-validation
+    opt_lambda <- cv_lasso_fit$lambda.min
+    # Train lasso model on full training set with optimal lambda
+    lasso_model <- glmnet(as.matrix(train[, -1]), train$y, alpha = 1, lambda = opt_lambda)
+    
+    # Evaluate model performance on test set
+    pred_lasso <- predict(lasso_model, newx = as.matrix(test[, -1]))
+    MSE <- mean((pred_lasso - test$y)^2)
+    beta_hat <- coef(lasso_model)[-1]
+    pred_vars <- which(beta_hat != 0)
+  } else {
+    # Train stepwise regression model
+    step_model <- stepAIC(lm(y ~ ., data = train), direction = "both")
+    # Evaluate model performance on test set
+    pred_step <- predict(step_model, newdata = test)
+    MSE <- mean((pred_step - test$y)^2)
+    beta_hat <- coef(step_model)[-1]
+    pred_vars <- which(beta_hat != 0)
+  }
+  
+  # Calculate proportion of times that the right predictors are selected
+  n_useful_selected <- length(intersect(pred_vars, 1:n_useful))
+  prop_useful_selected <- n_useful_selected / n_useful
+  
+  # Save results
+  results$pred_vars[i] <- length(pred_vars)
+  results$n_useful_selected[i] <- n_useful_selected
+  results$prop_useful_selected[i] <- prop_useful_selected
+  results$MSE[i] <- MSE
+}
+
+# Plot results
+ggplot(results, aes(x = n, y = pred_vars, color = method)) +
+  geom_line() +
+  geom_line(aes(x = n, y = n_useful_selected, color = method), linetype="twodash", alpha = 0.3, size = 1) +
+  ylim(4, 11) +
+  facet_wrap(sigma~., ncol = 1) +
+  scale_color_manual(values = c("red", "blue")) +
+  labs(x = "Sample size (n)", y = "# useful variables (dash lines) and total variables (solid) of models",
+  title="Number of model variables by sample size and noise level sigma") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(results, aes(x = n, y = MSE, color = method)) +
+  geom_line(, alpha = 0.3, size = 1) +
+  facet_wrap(sigma~., ncol = 1) +
+  scale_color_manual(values = c("red", "blue")) +
+  labs(x = "Sample size (n)", y = "MSE", title="MSE by sample size and noise levels sigma") +  
+  theme_minimal()
+```
+
+
+```{r}
+results <- mutate(results, precision = n_useful_selected/pred_vars)
+```
+
+```{r}
+ggplot(results) +
+  geom_line(aes(x = n, y = precision, color = method), alpha = 0.3, size = 1) +
+  facet_wrap(sigma~., ncol = 1) +
+  scale_color_manual(values = c("red", "blue")) +
+  labs(x = "Sample size (n)", y = "Precision",
+  title="Model precision by sample size and noise level sigma") +
+  theme_minimal()
+```
+```{r}
+results %>% filter(sigma == 1 & method == "lasso") %>% summarise(mean(precision))
+```
+
